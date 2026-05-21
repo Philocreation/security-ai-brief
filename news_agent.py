@@ -80,43 +80,36 @@ def select_and_summarize(articles: list[dict]) -> list[dict]:
         indent=2
     )
 
-    prompt = f"""You are a senior security and AI researcher. 
-Below are {len(articles)} news articles collected in the last 36 hours.
-
-YOUR TASK:
-1. Select the TOP 10 most important/impactful articles (mix of security and AI)
-2. For each selected article, provide:
-   - "index": original article index number
-   - "rank": 1-10
-   - "category": "security" or "ai"  
-   - "importance": one of "🔴 Critical" | "🟠 High" | "🟡 Medium"
-   - "korean_title": Korean translation of the title
-   - "korean_summary": 2-3 sentence Korean summary (concise, factual, no fluff)
-   - "key_point": single most important takeaway in Korean (1 sentence)
-   - "tags": list of 2-3 relevant Korean tags (e.g. ["랜섬웨어", "제로데이"])
-
-Selection criteria:
-- Novelty and breaking news
-- Severity of security threats / impact of AI developments
-- Relevance to enterprise and practitioners
-- Avoid duplicates on same topic
-
-TREND DETECTION (IMPORTANT):
-- After selecting top 10, analyze all collected articles (not just top 10)
-- Count how many articles share the same topic/keyword (e.g. ransomware, CVE, GPT, etc.)
-- If a topic appears in 3 or more articles total, it is a TRENDING topic
-- For trending topics: set importance to "🔴 Critical" and add "trending": true
-- Add a "trending_topics" field at the end: list of {"topic": "...", "count": N} for topics with 3+ articles
-
-Respond ONLY with a valid JSON object with two keys:
-- "top10": the array of top 10 articles
-- "trending_topics": array of trending topics [{"topic": "...", "count": N}], empty array if none
-
-No markdown, no preamble.
-
-ARTICLES:
-{articles_json}
-"""
+    prompt = (
+        f"You are a senior security and AI researcher.\n"
+        f"Below are {len(articles)} news articles collected in the last 36 hours.\n\n"
+        "YOUR TASK:\n"
+        "1. Select the TOP 10 most important/impactful articles (mix of security and AI)\n"
+        "2. For each selected article, provide:\n"
+        '   - \"index\": original article index number\n'
+        '   - \"rank\": 1-10\n'
+        '   - \"category\": \"security\" or \"ai\"\n'
+        '   - \"importance\": one of \"🔴 Critical\" | \"🟠 High\" | \"🟡 Medium\"\n'
+        '   - \"korean_title\": Korean translation of the title\n'
+        '   - \"korean_summary\": 2-3 sentence Korean summary\n'
+        '   - \"key_point\": single most important takeaway in Korean (1 sentence)\n'
+        '   - \"tags\": list of 2-3 relevant Korean tags\n\n'
+        "Selection criteria:\n"
+        "- Novelty and breaking news\n"
+        "- Severity of security threats / impact of AI developments\n"
+        "- Relevance to enterprise and practitioners\n"
+        "- Avoid duplicates on same topic\n\n"
+        "TREND DETECTION (IMPORTANT):\n"
+        "- Analyze all collected articles and count articles sharing same topic/keyword\n"
+        "- If a topic appears in 3 or more articles, it is a TRENDING topic\n"
+        "- For trending topics: set importance to \"🔴 Critical\" and add \"trending\": true\n"
+        "- Add a \"trending_topics\" array: each item has \"topic\" and \"count\" keys\n\n"
+        "Respond ONLY with a valid JSON object with two keys:\n"
+        '- \"top10\": the array of top 10 articles\n'
+        '- \"trending_topics\": array of trending topics, empty array if none\n\n'
+        "No markdown, no preamble.\n\n"
+        f"ARTICLES:\n{articles_json}\n"
+    )
 
     message = client.messages.create(
         model="claude-opus-4-5",
