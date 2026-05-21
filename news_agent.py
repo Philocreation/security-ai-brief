@@ -101,7 +101,18 @@ Selection criteria:
 - Relevance to enterprise and practitioners
 - Avoid duplicates on same topic
 
-Respond ONLY with a valid JSON array, no markdown, no preamble.
+TREND DETECTION (IMPORTANT):
+- After selecting top 10, analyze all collected articles (not just top 10)
+- Count how many articles share the same topic/keyword (e.g. ransomware, CVE, GPT, etc.)
+- If a topic appears in 3 or more articles total, it is a TRENDING topic
+- For trending topics: set importance to "🔴 Critical" and add "trending": true
+- Add a "trending_topics" field at the end: list of {topic, count} for topics with 3+ articles
+
+Respond ONLY with a valid JSON object with two keys:
+- "top10": the array of top 10 articles
+- "trending_topics": array of trending topics [{topic, count}], empty array if none
+
+No markdown, no preamble.
 
 ARTICLES:
 {articles_json}
@@ -121,7 +132,12 @@ ARTICLES:
             raw = raw[4:]
     raw = raw.strip()
 
-    top10_meta = json.loads(raw)
+    parsed = json.loads(raw)
+    top10_meta = parsed.get("top10", parsed) if isinstance(parsed, dict) else parsed
+    trending_topics = parsed.get("trending_topics", []) if isinstance(parsed, dict) else []
+
+    if trending_topics:
+        print(f"🚨 트렌딩 주제 감지: {[t['topic'] for t in trending_topics]}")
 
     # 원본 기사 정보와 병합
     result = []
@@ -130,7 +146,7 @@ ARTICLES:
         result.append({**original, **item})
 
     print(f"✅ Top 10 선정 완료")
-    return result
+    return result, trending_topics
 
 
 def generate_html(top10: list[dict]) -> str:
@@ -558,8 +574,8 @@ def main():
         print("❌ 수집된 기사 없음. 종료.")
         return
 
-    # 2. Claude로 Top 10 선정 + 요약
-    top10 = select_and_summarize(articles)
+    # 2. Claude로 Top 10 선정 + 요약 + 트렌드 감지
+    top10, trending_topics = select_and_summarize(articles)
 
     # 3. HTML 생성
     html = generate_html(top10)
@@ -580,7 +596,7 @@ def main():
     print(f"✅ 아카이브 저장 완료 → {archive_path}")
 
     # 6. 카카오톡 전송
-    send_kakao(top10)
+    send_kakao(top10, trending_topics)
 
 
 if __name__ == "__main__":
