@@ -518,10 +518,16 @@ def send_kakao(top10: list[dict]) -> None:
     lines.append(f"▶ 전체 Top 10 보기: {page_url}")
     text = "\n".join(lines)
 
-    data = urllib.parse.urlencode({
+    template = {
         "object_type": "text",
         "text": text,
-        "link": json.dumps({"web_url": page_url, "mobile_web_url": page_url}),
+        "link": {
+            "web_url": page_url,
+            "mobile_web_url": page_url
+        }
+    }
+    data = urllib.parse.urlencode({
+        "template_object": json.dumps(template, ensure_ascii=False)
     }).encode()
 
     req = urllib.request.Request(
