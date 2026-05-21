@@ -1,0 +1,39 @@
+name: Daily Security & AI News Brief
+
+on:
+  schedule:
+    # 매일 오전 08:00 KST = 23:00 UTC (전날)
+    - cron: '0 23 * * *'
+  workflow_dispatch:  # 수동 실행 버튼도 활성화
+
+permissions:
+  contents: write  # GitHub Pages 배포를 위해 필요
+
+jobs:
+  generate-brief:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install feedparser anthropic
+
+      - name: Run news agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python news_agent.py
+
+      - name: Commit & push generated HTML
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          git diff --cached --quiet || git commit -m "📰 Daily brief $(TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M KST')"
+          git push
