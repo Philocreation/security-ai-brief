@@ -472,11 +472,38 @@ def generate_html(top10: list[dict]) -> str:
 </html>"""
 
 
+def refresh_kakao_token() -> str:
+    """리프레시 토큰으로 새 액세스 토큰 발급"""
+    refresh_token = os.environ.get("KAKAO_REFRESH_TOKEN")
+    if not refresh_token:
+        print("⚠️  KAKAO_REFRESH_TOKEN 없음.")
+        return None
+
+    data = urllib.parse.urlencode({
+        "grant_type": "refresh_token",
+        "client_id": "aec4c181076bd8c64efe2730abd82efc",
+        "refresh_token": refresh_token,
+        "client_secret": "U9O1cGQWEllILPJWqIkQXcK0Ppehnz"
+    }).encode()
+
+    req = urllib.request.Request(
+        "https://kauth.kakao.com/oauth/token",
+        data=data,
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    )
+    res = urllib.request.urlopen(req)
+    result = json.loads(res.read())
+    print("✅ 액세스 토큰 자동 갱신 완료!")
+    return result.get("access_token")
+
+
 def send_kakao(top10: list[dict]) -> None:
     """카카오톡 나에게 보내기로 Top 10 요약 전송"""
-    token = os.environ.get("KAKAO_ACCESS_TOKEN")
+    token = refresh_kakao_token()
     if not token:
-        print("⚠️  KAKAO_ACCESS_TOKEN 없음. 카카오톡 전송 스킵.")
+        token = os.environ.get("KAKAO_ACCESS_TOKEN")
+    if not token:
+        print("⚠️  카카오 토큰 없음. 전송 스킵.")
         return
 
     today = datetime.now(KST).strftime("%Y.%m.%d")
