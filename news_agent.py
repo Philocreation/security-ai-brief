@@ -7,6 +7,8 @@ import feedparser
 import anthropic
 import json
 import os
+import urllib.request
+import urllib.parse
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -470,6 +472,50 @@ def generate_html(top10: list[dict]) -> str:
 </html>"""
 
 
+def send_kakao(top10: list[dict]) -> None:
+    """카카오톡 나에게 보내기로 Top 10 요약 전송"""
+    token = os.environ.get("KAKAO_ACCESS_TOKEN")
+    if not token:
+        print("⚠️  KAKAO_ACCESS_TOKEN 없음. 카카오톡 전송 스킵.")
+        return
+
+    today = datetime.now(KST).strftime("%Y.%m.%d")
+    page_url = "https://Philocreation.github.io/security-ai-brief/"
+
+    # 메시지 본문 구성 (Top 5만 요약, 나머지는 링크로)
+    lines = [f"📰 Security & AI Daily Brief\n{today}\n"]
+    for item in top10[:5]:
+        cat = "🔐" if item["category"] == "security" else "🤖"
+        lines.append(f"{cat} #{item['rank']} {item['korean_title']}")
+        lines.append(f"💡 {item['key_point']}\n")
+    lines.append(f"▶ 전체 Top 10 보기: {page_url}")
+    text = "\n".join(lines)
+
+    data = urllib.parse.urlencode({
+        "object_type": "text",
+        "text": text,
+        "link": json.dumps({"web_url": page_url, "mobile_web_url": page_url}),
+    }).encode()
+
+    req = urllib.request.Request(
+        "https://kapi.kakao.com/v2/api/talk/memo/default/send",
+        data=data,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+    )
+    try:
+        res = urllib.request.urlopen(req)
+        result = json.loads(res.read())
+        if result.get("result_code") == 0:
+            print("✅ 카카오톡 전송 성공!")
+        else:
+            print(f"⚠️  카카오톡 전송 실패: {result}")
+    except Exception as e:
+        print(f"⚠️  카카오톡 전송 오류: {e}")
+
+
 def main():
     print("🚀 Security & AI Daily News Agent 시작")
 
@@ -499,6 +545,9 @@ def main():
     archive_path = archive_dir / f"{date_str}.html"
     archive_path.write_text(html, encoding="utf-8")
     print(f"✅ 아카이브 저장 완료 → {archive_path}")
+
+    # 6. 카카오톡 전송
+    send_kakao(top10)
 
 
 if __name__ == "__main__":
