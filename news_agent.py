@@ -506,7 +506,7 @@ def refresh_kakao_token() -> str:
     return result.get("access_token")
 
 
-def send_kakao(top10: list[dict]) -> None:
+def send_kakao(top10: list[dict], trending_topics: list = []) -> None:
     """카카오톡 나에게 보내기로 Top 10 요약 전송"""
     token = refresh_kakao_token()
     if not token:
