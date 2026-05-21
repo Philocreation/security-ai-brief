@@ -106,7 +106,7 @@ TREND DETECTION (IMPORTANT):
 - Count how many articles share the same topic/keyword (e.g. ransomware, CVE, GPT, etc.)
 - If a topic appears in 3 or more articles total, it is a TRENDING topic
 - For trending topics: set importance to "🔴 Critical" and add "trending": true
-- Add a "trending_topics" field at the end: list of {topic, count} for topics with 3+ articles
+- Add a "trending_topics" field at the end: list of {{topic, count}} for topics with 3+ articles
 
 Respond ONLY with a valid JSON object with two keys:
 - "top10": the array of top 10 articles
